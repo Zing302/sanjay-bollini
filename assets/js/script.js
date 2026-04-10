@@ -77,7 +77,6 @@ function runTerminal() {
     return;
   }
   const line = lines[lineIdx++];
-  const delay = line.type === 'cmd' ? 90 : line.type === 'blank' ? 180 : 60;
   addLine(line);
   const pause = line.type === 'cmd' ? 700 : line.type === 'blank' ? 300 : 180;
   setTimeout(runTerminal, pause);
@@ -128,17 +127,43 @@ const sectionObserver = new IntersectionObserver((entries) => {
 sections.forEach(s => sectionObserver.observe(s));
 
 /* --- CONTACT FORM --- */
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwD6_MoCsGpqibrRZRruzVqsRHZqdb48-f3_9W1_kVILRs_c1Bhwl6wOhV2OdV8a0eexw/exec';
+
 const form = document.getElementById('contactForm');
 if (form) {
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = form.querySelector('.form-submit');
-    btn.textContent = 'Sent!';
-    btn.style.background = 'var(--emerald)';
-    setTimeout(() => {
-      btn.textContent = 'Send Message';
-      btn.style.background = '';
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+
+    const payload = {
+      name:    form.name.value.trim(),
+      email:   form.email.value.trim(),
+      message: form.message.value.trim()
+    };
+
+    try {
+      await fetch(SHEETS_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      btn.textContent = 'Sent!';
+      btn.style.background = 'var(--emerald)';
       form.reset();
-    }, 3000);
+      setTimeout(() => {
+        btn.textContent = 'Send Message';
+        btn.style.background = '';
+        btn.disabled = false;
+      }, 3000);
+    } catch {
+      btn.textContent = 'Failed — try emailing directly';
+      btn.style.background = '#e55';
+      btn.disabled = false;
+      setTimeout(() => {
+        btn.textContent = 'Send Message';
+        btn.style.background = '';
+      }, 4000);
+    }
   });
 }
